@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Glucides">
+<title>Calculateur Glucides</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  color: #f1f5f9;
+  padding-bottom: 80px;
+}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+.header {
+  background: rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding: 18px 16px 12px;
+  text-align: center;
+  position: sticky; top: 0; z-index: 200;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.header-sub { font-size: 10px; letter-spacing: 5px; color: #a78bfa; text-transform: uppercase; margin-bottom: 3px; }
+.header-title { font-size: 26px; font-weight: 700; color: #fff; }
+.header-tabs { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
+.tab-btn { flex: 1; max-width: 160px; border: none; border-radius: 10px; font-size: 12px; padding: 7px 10px; cursor: pointer; font-weight: 600; letter-spacing: 0.5px; transition: all 0.2s; }
+.tab-btn.active { background: #a78bfa; color: #0f172a; }
+.tab-btn.inactive { background: rgba(255,255,255,0.08); color: #94a3b8; }
+
+.wrap { max-width: 600px; margin: 0 auto; padding: 0 13px; }
+
+.total-box { margin: 13px 0 0; border-radius: 18px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255,255,255,0.1); transition: background 0.4s; }
+.total-label { font-size: 10px; letter-spacing: 4px; color: rgba(255,255,255,0.55); text-transform: uppercase; }
+.total-value { font-size: 50px; font-weight: 700; color: #fff; line-height: 1; margin-top: 2px; }
+.total-unit { font-size: 17px; font-weight: 400; margin-left: 3px; color: rgba(255,255,255,0.55); }
+.total-count { font-size: 11px; color: rgba(255,255,255,0.45); text-align: right; }
+.btn-vider { display: none; margin-top: 8px; background: rgba(255,255,255,0.14); border: none; border-radius: 9px; color: #fff; padding: 6px 14px; font-size: 11px; cursor: pointer; letter-spacing: 1px; }
+
+.section-label { font-size: 10px; letter-spacing: 3px; color: #a78bfa; text-transform: uppercase; margin: 16px 0 8px; }
+
+.repas-list { display: flex; flex-direction: column; gap: 6px; }
+.repas-item { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.09); border-radius: 13px; padding: 10px 11px; display: flex; align-items: center; gap: 8px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.repas-info { flex: 1; min-width: 0; }
+.repas-nom { font-size: 13px; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.repas-sub { font-size: 10px; color: #64748b; margin-top: 1px; }
+.qty-ctrl { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.qty-col { display: flex; flex-direction: column; align-items: center; }
+.qty-btn { width: 28px; height: 28px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 7px; color: #fff; font-size: 19px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; }
+.qty-input { width: 50px; text-align: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 7px; color: #fff; font-size: 14px; padding: 4px 2px; }
+.qty-unit { font-size: 10px; color: #64748b; margin-top: 2px; }
+.repas-gluc { font-weight: 700; font-size: 16px; min-width: 42px; text-align: right; flex-shrink: 0; }
+.btn-del { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 17px; padding: 0 2px; flex-shrink: 0; line-height: 1; }
+
+.search-input { width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 13px; color: #fff; font-size: 15px; padding: 13px 15px; outline: none; }
+.search-input::placeholder { color: #475569; }
+
+.cats { display: flex; gap: 7px; overflow-x: auto; scrollbar-width: none; padding: 10px 0 2px; }
+.cats::-webkit-scrollbar { display: none; }
+.cat-btn { flex-shrink: 0; border: none; border-radius: 20px; font-size: 12px; padding: 6px 13px; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+
+.aliment-list { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.aliment-btn { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 11px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; width: 100%; transition: all 0.12s; }
+.aliment-btn.sel { background: rgba(167,139,250,0.12); border-color: rgba(167,139,250,0.4); cursor: default; }
+.aliment-nom { font-size: 13px; color: #cbd5e1; flex: 1; min-width: 0; }
+.aliment-nom.sel { color: #e2e8f0; font-weight: 600; }
+.aliment-qte { font-size: 10px; color: #475569; margin-top: 1px; }
+.aliment-g { font-weight: 700; font-size: 16px; min-width: 34px; text-align: right; flex-shrink: 0; }
+.aliment-plus { font-size: 18px; margin-left: 4px; flex-shrink: 0; }
+
+.legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.legend-txt { font-size: 11px; color: #64748b; }
+
+/* EDIT VIEW */
+.edit-search { width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 13px; color: #fff; font-size: 15px; padding: 13px 15px; outline: none; margin-bottom: 10px; }
+.edit-search::placeholder { color: #475569; }
+.btn-add-new { width: 100%; border: 2px dashed rgba(167,139,250,0.4); background: rgba(167,139,250,0.06); border-radius: 13px; color: #a78bfa; font-size: 14px; padding: 14px; cursor: pointer; margin-bottom: 14px; font-weight: 600; }
+.edit-list { display: flex; flex-direction: column; gap: 5px; }
+.edit-item { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; }
+.edit-item-info { flex: 1; min-width: 0; }
+.edit-item-nom { font-size: 13px; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.edit-item-sub { font-size: 10px; color: #64748b; margin-top: 1px; }
+.btn-edit-item { background: rgba(167,139,250,0.15); border: 1px solid rgba(167,139,250,0.3); border-radius: 8px; color: #a78bfa; font-size: 12px; padding: 5px 10px; cursor: pointer; flex-shrink: 0; font-weight: 600; }
+.btn-del-item { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.25); border-radius: 8px; color: #ef4444; font-size: 16px; padding: 5px 9px; cursor: pointer; flex-shrink: 0; }
+
+/* SYNC BAR */
+.sync-bar { background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.2); border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; margin: 12px 0 0; }
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.sync-dot.ok { background: #4ade80; }
+.sync-dot.loading { background: #facc15; animation: pulse 1s infinite; }
+.sync-dot.err { background: #ef4444; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.sync-txt { font-size: 11px; color: #94a3b8; flex: 1; }
+.btn-sync { background: rgba(167,139,250,0.2); border: 1px solid rgba(167,139,250,0.3); border-radius: 7px; color: #a78bfa; font-size: 11px; padding: 5px 10px; cursor: pointer; flex-shrink: 0; font-weight: 600; }
+
+/* MODAL */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); }
+.modal-overlay.open { display: flex; }
+.modal { background: #1e1b4b; border-radius: 20px 20px 0 0; border: 1px solid rgba(255,255,255,0.1); padding: 24px 20px 40px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+.modal-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 20px; }
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 11px; letter-spacing: 2px; color: #a78bfa; text-transform: uppercase; margin-bottom: 6px; display: block; }
+.form-input { width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 11px; color: #fff; font-size: 15px; padding: 12px 14px; outline: none; }
+.form-input::placeholder { color: #475569; }
+.form-select { width: 100%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 11px; color: #fff; font-size: 15px; padding: 12px 14px; outline: none; appearance: none; -webkit-appearance: none; }
+.form-select option { background: #1e1b4b; color: #fff; }
+.mode-toggle { display: flex; gap: 8px; }
+.mode-btn { flex: 1; border: 2px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); border-radius: 11px; color: #94a3b8; font-size: 13px; padding: 10px; cursor: pointer; transition: all 0.15s; font-weight: 500; }
+.mode-btn.active { border-color: #a78bfa; background: rgba(167,139,250,0.15); color: #a78bfa; font-weight: 700; }
+.form-hint { font-size: 11px; color: #475569; margin-top: 5px; }
+.modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+.btn-save { flex: 1; background: #a78bfa; border: none; border-radius: 13px; color: #0f172a; font-size: 15px; font-weight: 700; padding: 14px; cursor: pointer; }
+.btn-cancel { flex: 1; background: rgba(255,255,255,0.08); border: none; border-radius: 13px; color: #94a3b8; font-size: 15px; padding: 14px; cursor: pointer; }
+.btn-danger { width: 100%; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 13px; color: #ef4444; font-size: 14px; padding: 12px; cursor: pointer; margin-top: 10px; font-weight: 600; }
+
+.empty { text-align: center; color: #475569; padding: 30px 0; font-size: 14px; }
+.more { text-align: center; color: #475569; font-size: 12px; padding: 8px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-sub">Calculateur de</div>
+  <div class="header-title">Glucides 🍽️</div>
+  <div class="header-tabs">
+    <button class="tab-btn active" id="tabRepas" onclick="switchTab('repas')">🍽️ Mon repas</button>
+    <button class="tab-btn inactive" id="tabEdit" onclick="switchTab('edit')">✏️ Mes aliments</button>
+  </div>
+</div>
+
+<!-- VUE REPAS -->
+<div id="viewRepas" class="wrap">
+  <div class="sync-bar" id="syncBar">
+    <div class="sync-dot loading" id="syncDot"></div>
+    <div class="sync-txt" id="syncTxt">Chargement des aliments...</div>
+    <button class="btn-sync" onclick="loadFromSheets()">↺ Sync</button>
+  </div>
+
+  <div class="total-box" id="totalBox" style="background:rgba(255,255,255,0.06)">
+    <div>
+      <div class="total-label">Total glucides</div>
+      <div class="total-value"><span id="totalVal">0</span><span class="total-unit">g</span></div>
+    </div>
+    <div>
+      <div class="total-count" id="totalCount">0 aliment</div>
+      <button class="btn-vider" id="btnVider" onclick="viderRepas()">VIDER LE REPAS</button>
+    </div>
+  </div>
+
+  <div id="repasSection" style="display:none">
+    <div class="section-label">Mon repas</div>
+    <div class="repas-list" id="repasList"></div>
+  </div>
+
+  <div class="section-label" style="margin-top:18px">Ajouter un aliment</div>
+  <input class="search-input" type="text" id="searchInput" placeholder="🔍  Rechercher (banane, pâtes, pizza...)" oninput="renderList()">
+  <div class="cats" id="catsBar"></div>
+  <div class="aliment-list" id="alimentList"></div>
+
+  <div class="section-label" style="margin-top:22px;color:#475569">Légende glucides / portion</div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div><span class="legend-txt">0g · Nul</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#86efac"></div><span class="legend-txt">&lt;15g · Faible</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#facc15"></div><span class="legend-txt">15–30g · Modéré</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div><span class="legend-txt">&gt;30g · Élevé</span></div>
+  </div>
+</div>
+
+<!-- VUE ÉDITION -->
+<div id="viewEdit" class="wrap" style="display:none">
+  <div class="section-label" style="margin-top:16px">Gérer mes aliments</div>
+  <button class="btn-add-new" onclick="openModal(null)">＋ Ajouter un nouvel aliment</button>
+  <input class="edit-search" type="text" id="editSearchInput" placeholder="🔍  Rechercher un aliment à modifier..." oninput="renderEditList()">
+  <div class="cats" id="editCatsBar"></div>
+  <div class="edit-list" id="editList"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Ajouter un aliment</div>
+    <div class="form-group">
+      <label class="form-label">Nom de l'aliment</label>
+      <input class="form-input" type="text" id="fNom" placeholder="ex: Tarte aux fraises">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Catégorie</label>
+      <select class="form-select" id="fCat"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Type de quantité</label>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="modeG" onclick="setMode('g')">⚖️ En grammes<br><span style="font-size:10px;font-weight:400">pas de 5g</span></button>
+        <button class="mode-btn" id="modeU" onclick="setMode('u')">🔢 Par unité<br><span style="font-size:10px;font-weight:400">ex: 1 œuf, 1 yaourt</span></button>
+      </div>
+    </div>
+    <div class="form-group" id="gPourGroup">
+      <label class="form-label">Glucides pour 100g</label>
+      <input class="form-input" type="number" id="fGpour" placeholder="ex: 25">
+      <div class="form-hint">Valeur en grammes de glucides pour 100g</div>
+    </div>
+    <div class="form-group" id="labelGroup" style="display:none">
+      <label class="form-label">Glucides par unité (g)</label>
+      <input class="form-input" type="number" id="fGunit" placeholder="ex: 20">
+    </div>
+    <div class="form-group" id="labelNameGroup" style="display:none">
+      <label class="form-label">Nom de l'unité</label>
+      <input class="form-input" type="text" id="fLabel" placeholder="ex: yaourt (125g), oeuf, biscuit (8g)">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Quantité par défaut</label>
+      <input class="form-input" type="number" id="fQte0" placeholder="ex: 100">
+      <div class="form-hint" id="qte0Hint">Quantité affichée à l'ajout (en grammes)</div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn-save" onclick="saveAliment()">💾 Enregistrer</button>
+    </div>
+    <button class="btn-danger" id="btnSupprimer" onclick="deleteAliment()" style="display:none">🗑️ Supprimer cet aliment</button>
+  </div>
+</div>
+
+<script>
+// ── CONFIGURATION ─────────────────────────────────────────────────────────────
+// Remplace par l'ID de TON Google Sheets
+const SHEET_ID = "1gJnd8mh3BJ0pByMe-uF0XR-MYLdH_wldquXeRSZqibU";
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Feuille1`;
+
+// ── COULEURS & CATÉGORIES ─────────────────────────────────────────────────────
+const CATCOL = {
+  "Légumes":"#4ade80","Féculents":"#fb923c","Viandes/Poissons":"#f472b6",
+  "Produits laitiers":"#60a5fa","Fruits":"#facc15","Pains/Céréales":"#c084fc",
+  "Desserts":"#f87171","Biscuits":"#fbbf24","Sucreries":"#34d399",
+  "Boissons":"#38bdf8","Fast-food":"#a78bfa"
+};
+const CAT_LIST = Object.keys(CATCOL);
+
+// ── ÉTAT ──────────────────────────────────────────────────────────────────────
+let DB = [];
+let repas = [];
+let catActive = "Tous";
+let editCatActive = "Tous";
+let currentTab = "repas";
+let modalMode = null;
+let modalIndex = null;
+let modalFormMode = "g";
+
+// ── CHARGEMENT GOOGLE SHEETS ──────────────────────────────────────────────────
+async function loadFromSheets() {
+  setSyncStatus("loading", "Synchronisation...");
+  try {
+    const res = await fetch(SHEET_URL + "&t=" + Date.now());
+    const text = await res.text();
+    const rows = parseCSV(text);
+    if (rows.length < 2) throw new Error("Données vides");
+
+    const headers = rows[0].map(h => h.trim().toLowerCase());
+    const iNom = headers.indexOf("nom");
+    const iCat = headers.indexOf("cat");
+    const iMode = headers.indexOf("mode");
+    const iGpour = headers.indexOf("gpour");
+    const iQte0 = headers.indexOf("qte0");
+    const iLabel = headers.indexOf("label");
+
+    const newDB = [];
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r[iNom] || !r[iNom].trim()) continue;
+      newDB.push({
+        id: i,
+        nom: r[iNom].trim(),
+        cat: r[iCat] ? r[iCat].trim() : "Légumes",
+        mode: r[iMode] ? r[iMode].trim() : "g",
+        gPour: parseFloat(r[iGpour]) || 0,
+        qte0: parseFloat(r[iQte0]) || 100,
+        label: r[iLabel] ? r[iLabel].trim() : "",
+      });
+    }
+
+    DB = newDB;
+    localStorage.setItem("glucides_db_cache", JSON.stringify(DB));
+    localStorage.setItem("glucides_db_ts", Date.now());
+    setSyncStatus("ok", `${DB.length} aliments · Sync OK`);
+    renderCats(); renderList();
+    if (currentTab === "edit") { renderEditCats(); renderEditList(); }
+  } catch(e) {
+    // Fallback sur le cache local
+    const cache = localStorage.getItem("glucides_db_cache");
+    if (cache) {
+      DB = JSON.parse(cache);
+      setSyncStatus("err", "Hors ligne · données en cache");
+      renderCats(); renderList();
+    } else {
+      setSyncStatus("err", "Impossible de charger · vérifie ta connexion");
+    }
+  }
+}
+
+function setSyncStatus(state, txt) {
+  const dot = document.getElementById("syncDot");
+  dot.className = "sync-dot " + state;
+  document.getElementById("syncTxt").textContent = txt;
+}
+
+// ── PARSE CSV ─────────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const rows = [];
+  const lines = text.split("\n");
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const row = [];
+    let inQuote = false, cell = "";
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQuote = !inQuote; }
+      else if (c === ',' && !inQuote) { row.push(cell); cell = ""; }
+      else { cell += c; }
+    }
+    row.push(cell);
+    rows.push(row);
+  }
+  return rows;
+}
+
+// ── UTILITAIRES ───────────────────────────────────────────────────────────────
+function calcG(item, qte) { return item.mode === "g" ? (item.gPour/100)*qte : item.gPour*qte; }
+function glucColor(g) {
+  if (g===0) return "#4ade80";
+  if (g<15) return "#86efac";
+  if (g<30) return "#facc15";
+  return "#f87171";
+}
+function norm(s) { return (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
+function round1(n) { return Math.round(n*10)/10; }
+
+// ── ONGLETS ───────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById("viewRepas").style.display = tab==="repas" ? "block" : "none";
+  document.getElementById("viewEdit").style.display = tab==="edit" ? "block" : "none";
+  document.getElementById("tabRepas").className = "tab-btn "+(tab==="repas"?"active":"inactive");
+  document.getElementById("tabEdit").className = "tab-btn "+(tab==="edit"?"active":"inactive");
+  if (tab==="edit") { renderEditCats(); renderEditList(); }
+}
+
+// ── TOTAL ─────────────────────────────────────────────────────────────────────
+function updateTotal() {
+  const total = repas.reduce((s,r) => s+calcG(r,r.qte), 0);
+  document.getElementById("totalVal").textContent = round1(total);
+  document.getElementById("totalCount").textContent = repas.length+" aliment"+(repas.length>1?"s":"");
+  document.getElementById("btnVider").style.display = repas.length ? "block" : "none";
+  const box = document.getElementById("totalBox");
+  if (total===0) box.style.background = "rgba(255,255,255,0.06)";
+  else if (total<30) box.style.background = "linear-gradient(135deg,#064e3b,#065f46)";
+  else if (total<60) box.style.background = "linear-gradient(135deg,#92400e,#b45309)";
+  else box.style.background = "linear-gradient(135deg,#7f1d1d,#991b1b)";
+}
+
+// ── REPAS ─────────────────────────────────────────────────────────────────────
+function renderRepas() {
+  const sec = document.getElementById("repasSection");
+  const list = document.getElementById("repasList");
+  if (!repas.length) { sec.style.display="none"; return; }
+  sec.style.display="block";
+  list.innerHTML = repas.map((r,i) => {
+    const g = calcG(r,r.qte);
+    const step = r.mode==="g" ? 5 : 1;
+    const unitLabel = r.mode==="g" ? "g" : (r.label||"×").split(" ")[0];
+    const subLine = r.mode==="g" ? `${r.gPour}g gluc./100g · ±${step}g` : (r.label||"par unité");
+    return `<div class="repas-item">
+      <div class="dot" style="background:${CATCOL[r.cat]||'#a78bfa'}"></div>
+      <div class="repas-info">
+        <div class="repas-nom">${r.nom}</div>
+        <div class="repas-sub">${subLine}</div>
+      </div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="changeQte(${i},-1)">−</button>
+        <div class="qty-col">
+          <input class="qty-input" type="number" value="${r.qte}"
+            onchange="setQteManual(${i},this.value)"
+            oninput="setQteManual(${i},this.value)">
+          <div class="qty-unit">${unitLabel}</div>
+        </div>
+        <button class="qty-btn" onclick="changeQte(${i},+1)">+</button>
+      </div>
+      <div class="repas-gluc" style="color:${glucColor(g)}">${round1(g)}g</div>
+      <button class="btn-del" onclick="removeFromRepas(${i})">✕</button>
+    </div>`;
+  }).join("");
+}
+
+function renderList() {
+  const q = norm(document.getElementById("searchInput").value);
+  const filtered = DB.filter(a => (catActive==="Tous"||a.cat===catActive) && norm(a.nom).includes(q));
+  const list = document.getElementById("alimentList");
+  if (!DB.length) { list.innerHTML='<div class="empty">Chargement en cours...</div>'; return; }
+  if (!filtered.length) { list.innerHTML='<div class="empty">Aucun aliment trouvé</div>'; return; }
+  const shown = filtered.slice(0,60);
+  list.innerHTML = shown.map(a => {
+    const inRepas = repas.some(r => r.nom===a.nom);
+    const gLabel = a.mode==="g" ? "pour 100g" : (a.label||"par unité");
+    return `<button class="aliment-btn${inRepas?" sel":""}" onclick="${inRepas?"":` addAliment(${a.id}) `}">
+      <div class="dot" style="background:${CATCOL[a.cat]||'#a78bfa'};opacity:${inRepas?1:0.6}"></div>
+      <div style="flex:1;min-width:0">
+        <div class="aliment-nom${inRepas?" sel":""}">${a.nom}</div>
+        <div class="aliment-qte">${gLabel}</div>
+      </div>
+      <div class="aliment-g" style="color:${glucColor(a.gPour)}">${a.gPour}g</div>
+      <div class="aliment-plus" style="color:${inRepas?'#a78bfa':'#334155'}">${inRepas?"✓":"+"}</div>
+    </button>`;
+  }).join("");
+  if (filtered.length>60) list.innerHTML += `<div class="more">${filtered.length-60} de plus — affinez la recherche</div>`;
+}
+
+function renderCats() {
+  const bar = document.getElementById("catsBar");
+  const all = ["Tous",...CAT_LIST];
+  bar.innerHTML = all.map(c => {
+    const col = CATCOL[c]||"#a78bfa";
+    const active = c===catActive;
+    return `<button class="cat-btn" onclick="setcat('${c}')"
+      style="background:${active?col:'rgba(255,255,255,0.07)'};color:${active?'#000':'#94a3b8'};font-weight:${active?'600':'normal'}">${c}</button>`;
+  }).join("");
+}
+function setcat(c) { catActive=c; renderCats(); renderList(); }
+
+// ── ACTIONS REPAS ─────────────────────────────────────────────────────────────
+function addAliment(id) {
+  const a = DB.find(x => x.id===id);
+  if (!a||repas.some(r => r.nom===a.nom)) return;
+  repas.push({...a, qte:a.qte0});
+  renderRepas(); renderList(); updateTotal();
+}
+function removeFromRepas(i) {
+  repas.splice(i,1); renderRepas(); renderList(); updateTotal();
+}
+function changeQte(i,dir) {
+  const r = repas[i];
+  const step = r.mode==="g" ? 5 : 1;
+  r.qte = Math.max(r.mode==="g"?5:1, r.qte+dir*step);
+  renderRepas(); updateTotal();
+}
+function setQteManual(i,val) {
+  const n = parseFloat(val);
+  if (isNaN(n)||n<=0) return;
+  repas[i].qte = n; updateTotal();
+}
+function viderRepas() { repas=[]; renderRepas(); renderList(); updateTotal(); }
+
+// ── ÉDITION ───────────────────────────────────────────────────────────────────
+function renderEditCats() {
+  const bar = document.getElementById("editCatsBar");
+  const all = ["Tous",...CAT_LIST];
+  bar.innerHTML = all.map(c => {
+    const col = CATCOL[c]||"#a78bfa";
+    const active = c===editCatActive;
+    return `<button class="cat-btn" onclick="setEditCat('${c}')"
+      style="background:${active?col:'rgba(255,255,255,0.07)'};color:${active?'#000':'#94a3b8'};font-weight:${active?'600':'normal'}">${c}</button>`;
+  }).join("");
+}
+function setEditCat(c) { editCatActive=c; renderEditCats(); renderEditList(); }
+
+function renderEditList() {
+  const q = norm(document.getElementById("editSearchInput").value);
+  const filtered = DB.filter(a => (editCatActive==="Tous"||a.cat===editCatActive) && norm(a.nom).includes(q));
+  const list = document.getElementById("editList");
+  if (!filtered.length) { list.innerHTML='<div class="empty">Aucun aliment trouvé</div>'; return; }
+  list.innerHTML = filtered.slice(0,80).map(a => {
+    const dbIdx = DB.indexOf(a);
+    const sub = a.mode==="g" ? `${a.gPour}g gluc./100g · défaut ${a.qte0}g` : `${a.gPour}g gluc. par ${a.label||"unité"}`;
+    return `<div class="edit-item">
+      <div class="dot" style="background:${CATCOL[a.cat]||'#a78bfa'}"></div>
+      <div class="edit-item-info">
+        <div class="edit-item-nom">${a.nom}</div>
+        <div class="edit-item-sub">${sub}</div>
+      </div>
+      <button class="btn-edit-item" onclick="openModal(${dbIdx})">✏️</button>
+      <button class="btn-del-item" onclick="confirmDelete(${dbIdx})">🗑️</button>
+    </div>`;
+  }).join("");
+  if (filtered.length>80) list.innerHTML += `<div class="more">${filtered.length-80} de plus</div>`;
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function populateCatSelect(selected) {
+  const sel = document.getElementById("fCat");
+  sel.innerHTML = CAT_LIST.map(c => `<option value="${c}" ${c===selected?'selected':''}>${c}</option>`).join("");
+}
+function setMode(m) {
+  modalFormMode=m;
+  document.getElementById("modeG").className="mode-btn"+(m==="g"?" active":"");
+  document.getElementById("modeU").className="mode-btn"+(m==="u"?" active":"");
+  document.getElementById("gPourGroup").style.display=m==="g"?"block":"none";
+  document.getElementById("labelGroup").style.display=m==="u"?"block":"none";
+  document.getElementById("labelNameGroup").style.display=m==="u"?"block":"none";
+  document.getElementById("qte0Hint").textContent=m==="g"?"Quantité en grammes (ex: 100)":"Nombre d'unités par défaut (ex: 1)";
+}
+function openModal(dbIdx) {
+  modalIndex=dbIdx; modalMode=dbIdx===null?"add":"edit";
+  document.getElementById("modalTitle").textContent=modalMode==="add"?"Ajouter un aliment":"Modifier l'aliment";
+  document.getElementById("btnSupprimer").style.display=modalMode==="edit"?"block":"none";
+  if (modalMode==="add") {
+    document.getElementById("fNom").value="";
+    populateCatSelect(editCatActive!=="Tous"?editCatActive:"Légumes");
+    document.getElementById("fGpour").value="";
+    document.getElementById("fGunit").value="";
+    document.getElementById("fLabel").value="";
+    document.getElementById("fQte0").value="100";
+    setMode("g");
+  } else {
+    const a=DB[dbIdx];
+    document.getElementById("fNom").value=a.nom;
+    populateCatSelect(a.cat);
+    document.getElementById("fGpour").value=a.gPour;
+    document.getElementById("fGunit").value=a.gPour;
+    document.getElementById("fLabel").value=a.label||"";
+    document.getElementById("fQte0").value=a.qte0;
+    setMode(a.mode);
+  }
+  document.getElementById("modalOverlay").className="modal-overlay open";
+}
+function closeModal() { document.getElementById("modalOverlay").className="modal-overlay"; }
+
+function saveAliment() {
+  const nom = document.getElementById("fNom").value.trim();
+  const cat = document.getElementById("fCat").value;
+  const mode = modalFormMode;
+  const gPour = parseFloat(mode==="g" ? document.getElementById("fGpour").value : document.getElementById("fGunit").value);
+  const label = document.getElementById("fLabel").value.trim();
+  const qte0 = parseFloat(document.getElementById("fQte0").value);
+  if (!nom) { alert("Merci d'entrer un nom."); return; }
+  if (isNaN(gPour)||gPour<0) { alert("Merci d'entrer une valeur de glucides valide."); return; }
+  if (isNaN(qte0)||qte0<=0) { alert("Merci d'entrer une quantité par défaut valide."); return; }
+  const aliment = {nom,cat,mode,gPour,qte0,label:mode==="u"?label:""};
+  if (modalMode==="add") {
+    aliment.id=Date.now(); DB.push(aliment);
+  } else {
+    aliment.id=DB[modalIndex].id;
+    const ri=repas.findIndex(r=>r.id===aliment.id);
+    if (ri>=0) repas[ri]={...aliment,qte:repas[ri].qte};
+    DB[modalIndex]=aliment;
+  }
+  localStorage.setItem("glucides_db_cache", JSON.stringify(DB));
+  setSyncStatus("err","⚠️ Modifs locales · pense à mettre à jour ton Sheets");
+  closeModal(); renderEditList(); renderList(); renderRepas(); updateTotal();
+}
+
+function confirmDelete(dbIdx) {
+  const a=DB[dbIdx];
+  if (confirm(`Supprimer « ${a.nom} » ?`)) deleteFromDB(dbIdx);
+}
+function deleteAliment() {
+  if (modalIndex===null) return;
+  if (confirm(`Supprimer « ${DB[modalIndex].nom} » ?`)) { deleteFromDB(modalIndex); closeModal(); }
+}
+function deleteFromDB(dbIdx) {
+  const id=DB[dbIdx].id;
+  DB.splice(dbIdx,1);
+  repas=repas.filter(r=>r.id!==id);
+  localStorage.setItem("glucides_db_cache", JSON.stringify(DB));
+  renderEditList(); renderList(); renderRepas(); updateTotal();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loadFromSheets();
+</script>
+</body>
+</html>
