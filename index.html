@@ -144,6 +144,7 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
     <div class="sync-dot loading" id="syncDot"></div>
     <div class="sync-txt" id="syncTxt">Chargement des aliments...</div>
     <button class="btn-sync" onclick="loadFromSheets()">↺ Sync</button>
+    <button class="btn-sync" onclick="openSheets()" style="background:rgba(74,222,128,0.2);border-color:rgba(74,222,128,0.3);color:#4ade80;margin-left:4px">📊 Sheets</button>
   </div>
 
   <div class="total-box" id="totalBox" style="background:rgba(255,255,255,0.06)">
@@ -180,6 +181,7 @@ input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
 <div id="viewEdit" class="wrap" style="display:none">
   <div class="section-label" style="margin-top:16px">Gérer mes aliments</div>
   <button class="btn-add-new" onclick="openModal(null)">＋ Ajouter un nouvel aliment</button>
+  <button class="btn-add-new" onclick="openSheets()" style="border-color:rgba(74,222,128,0.4);background:rgba(74,222,128,0.06);color:#4ade80;margin-top:-8px">📊 Ouvrir Google Sheets pour modifier</button>
   <input class="edit-search" type="text" id="editSearchInput" placeholder="🔍  Rechercher un aliment à modifier..." oninput="renderEditList()">
   <div class="cats" id="editCatsBar"></div>
   <div class="edit-list" id="editList"></div>
@@ -569,6 +571,11 @@ function deleteFromDB(dbIdx) {
   repas=repas.filter(r=>r.id!==id);
   localStorage.setItem("glucides_db_cache", JSON.stringify(DB));
   renderEditList(); renderList(); renderRepas(); updateTotal();
+}
+
+// ── OUVRIR GOOGLE SHEETS ──────────────────────────────────────────────────────
+function openSheets() {
+  window.open(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`, '_blank');
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
